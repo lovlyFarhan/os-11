@@ -1,0 +1,26 @@
+set has_integirty = 0
+	call wrapfs remove on integrity
+	refer vfs remove xattr for notification
+	remove the integrity value from the file.
+
+set has_integrity = 1
+	compute the md5 and write as such.
+
+During file open
+	Look at (struct) file operation rather than i_count.
+	Case 1: File corresponding to the inode has never been open:
+		Check MD5sum, if valid then give fd.
+	Case 2: File has been opened.
+		Case 1 was checked first, so MD5sum was valid. So return fd without checking.
+		An attempt to check will be go awry, since the MD5sum and file contents may not agree now.
+
+What is the consistency point?
+	At which MD5sum of content of file and integrity attribute match?
+	Guaranteed: When no file write operation has taken place since the last write.
+
+Question:
+	How to find if a file is currently opened by any process or user?
+	Easiest way to find this, possibly from the inode.
+	Okay if this info is available from file *, but it is unlikely to be the case.
+	Beware of Dcache count set in i_count. This will be incremented if there was a recent lookup.
+	This is unlikely to be useful and may lead to logic errors.
